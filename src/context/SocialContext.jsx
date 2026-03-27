@@ -10,8 +10,6 @@ const PLATFORMS = [
   { id: 'youtube', name: 'YouTube', color: '#ff0000', icon: 'youtube', maxChars: 5000 },
   { id: 'tiktok', name: 'TikTok', color: '#010101', icon: 'tiktok', maxChars: 2200 },
   { id: 'linkedin', name: 'LinkedIn', color: '#0a66c2', icon: 'linkedin', maxChars: 3000 },
-  { id: 'threads', name: 'Threads', color: '#ffffff', icon: 'threads', maxChars: 500 },
-  { id: 'bluesky', name: 'Bluesky', color: '#0085ff', icon: 'bluesky', maxChars: 300 },
 ]
 
 // Token configuration per platform (what the user needs to provide)
@@ -63,22 +61,6 @@ const TOKEN_CONFIG = {
       jsessionid: 'JSESSIONID Cookie',
     },
     help: 'Open LinkedIn.com → DevTools (F12) → Application → Cookies → linkedin.com',
-  },
-  threads: {
-    required: ['session_id', 'csrf_token'],
-    labels: {
-      session_id: 'Session ID (sessionid cookie)',
-      csrf_token: 'CSRF Token (csrftoken cookie)',
-    },
-    help: 'Open Threads.net → DevTools (F12) → Application → Cookies → threads.net',
-  },
-  bluesky: {
-    required: ['identifier', 'app_password'],
-    labels: {
-      identifier: 'Handle (e.g. yourname.bsky.social)',
-      app_password: 'App Password',
-    },
-    help: 'Bluesky → Settings → Privacy and Security → App Passwords → Add App Password',
   },
 }
 

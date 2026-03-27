@@ -4,8 +4,6 @@ import * as facebook from './facebook.ts'
 import * as youtube from './youtube.ts'
 import * as tiktok from './tiktok.ts'
 import * as linkedin from './linkedin.ts'
-import * as threads from './threads.ts'
-import * as bluesky from './bluesky.ts'
 
 export type PlatformAdapter = {
   verifyCredentials: (tokens: Record<string, string>) => Promise<Record<string, unknown>>
@@ -23,8 +21,6 @@ const platforms: Record<string, PlatformAdapter> = {
   youtube,
   tiktok,
   linkedin,
-  threads,
-  bluesky,
 }
 
 export function getPlatform(name: string): PlatformAdapter {

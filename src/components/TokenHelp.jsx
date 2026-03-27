@@ -67,28 +67,6 @@ const helpContent = {
       'Paste both values into the fields above',
     ],
   },
-  threads: {
-    icon: Cookie,
-    steps: [
-      'Open threads.net and log into your account',
-      'Press F12 to open DevTools',
-      'Go to the Application tab → Cookies → threads.net',
-      'Find and copy the "sessionid" cookie value',
-      'Find and copy the "csrftoken" cookie value',
-      'Paste both values into the fields above',
-    ],
-  },
-  bluesky: {
-    icon: Key,
-    steps: [
-      'Open bsky.app and log into your account',
-      'Go to Settings → Privacy and Security',
-      'Click "App Passwords"',
-      'Click "Add App Password" and give it a name (e.g. "Stalefish")',
-      'Copy the generated app password',
-      'Enter your handle (e.g. yourname.bsky.social) and the app password above',
-    ],
-  },
 }
 
 export default function TokenHelp({ platform, config }) {
