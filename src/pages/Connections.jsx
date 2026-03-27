@@ -228,8 +228,7 @@ export default function Connections() {
           <AlertCircle size={16} className="text-gray-500 mt-0.5 shrink-0" />
           <p className="text-xs text-gray-500">
             Session cookies may expire and need to be re-entered periodically.
-            Bluesky app passwords do not expire. If a connection stops working,
-            re-enter your tokens to reconnect.
+            If a connection stops working, re-enter your tokens to reconnect.
           </p>
         </div>
       </div>
