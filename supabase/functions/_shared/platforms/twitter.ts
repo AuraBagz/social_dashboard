@@ -7,10 +7,14 @@ function headers(tokens: Record<string, string>) {
     'Cookie': `auth_token=${tokens.auth_token}; ct0=${tokens.ct0}`,
     'X-Csrf-Token': tokens.ct0,
     'Content-Type': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     'X-Twitter-Active-User': 'yes',
     'X-Twitter-Auth-Type': 'OAuth2Session',
     'X-Twitter-Client-Language': 'en',
+    'Referer': 'https://x.com/',
+    'Origin': 'https://x.com',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.9',
   }
 }
 

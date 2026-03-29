@@ -47,8 +47,26 @@ Deno.serve(async (req) => {
     const allPosts: Array<Record<string, unknown>> = []
     const errors: Record<string, string> = {}
 
+    // Platforms that block datacenter IPs — use cached data only
+    const serverBlockedPlatforms = ['twitter']
+
     await Promise.all(
       connections.map(async (conn) => {
+        // For blocked platforms, only return cached data
+        if (serverBlockedPlatforms.includes(conn.platform)) {
+          const { data: cached } = await supabase
+            .from('social_posts_cache')
+            .select('*')
+            .eq('platform', conn.platform)
+            .order('posted_at', { ascending: false })
+            .limit(count)
+
+          if (cached && cached.length > 0) {
+            allPosts.push(...cached.map(p => ({ ...p, platform: conn.platform })))
+          }
+          return
+        }
+
         try {
           const adapter = getPlatform(conn.platform)
           const posts = await adapter.getTimeline(conn.tokens as Record<string, string>, count)
