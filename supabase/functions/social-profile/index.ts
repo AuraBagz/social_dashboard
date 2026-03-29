@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     if (action === 'refresh') {
       const { data: connections, error } = await supabase
         .from('social_connections')
-        .select('platform, tokens')
+        .select('platform, tokens, profile_data')
         .eq('status', 'active')
 
       if (error) return corsError(error.message)
@@ -33,8 +33,19 @@ Deno.serve(async (req) => {
       const profiles: Record<string, unknown> = {}
       const errors: Record<string, string> = {}
 
+      // Platforms that block datacenter IPs — return cached data
+      const serverBlockedPlatforms = ['twitter']
+
       await Promise.all(
         (connections || []).map(async (conn) => {
+          // For blocked platforms, return cached profile_data
+          if (serverBlockedPlatforms.includes(conn.platform)) {
+            if (conn.profile_data) {
+              profiles[conn.platform] = conn.profile_data
+            }
+            return
+          }
+
           try {
             const adapter = getPlatform(conn.platform)
             const profileData = await adapter.verifyCredentials(conn.tokens as Record<string, string>)

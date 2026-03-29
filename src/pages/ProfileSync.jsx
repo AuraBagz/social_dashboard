@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useSocial } from '../context/SocialContext.jsx'
 import PlatformIcon from '../components/PlatformIcon.jsx'
-import { Upload, Check, AlertTriangle, Image, Save, RefreshCw, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { Upload, Check, AlertTriangle, Image, Save, RefreshCw, CheckCircle2, XCircle, Loader2, Download } from 'lucide-react'
 
 export default function ProfileSync() {
   const { profile, setProfile, connectedPlatforms, platforms, connections, syncProfile, refreshProfiles } = useSocial()
@@ -74,6 +74,20 @@ export default function ProfileSync() {
       console.error('Refresh failed:', err)
     } finally {
       setRefreshing(false)
+    }
+  }
+
+  const loadFromPlatform = (platformId) => {
+    const profileData = connections[platformId]?.profileData
+    if (!profileData || profileData.username === 'connected') return
+    setProfile(prev => ({
+      ...prev,
+      displayName: profileData.name || prev.displayName,
+      bio: profileData.bio || prev.bio,
+      website: prev.website,
+    }))
+    if (profileData.avatar) {
+      setAvatarPreview(profileData.avatar)
     }
   }
 
@@ -194,6 +208,15 @@ export default function ProfileSync() {
                           <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{profileData.bio}</p>
                         )}
                       </div>
+                      {profileData && profileData.username !== 'connected' && (
+                        <button
+                          onClick={() => loadFromPlatform(p.id)}
+                          className="shrink-0 flex items-center gap-1 px-2 py-1 rounded text-xs text-gold hover:bg-gold/10 transition-colors"
+                          title={`Load profile from ${p.name}`}
+                        >
+                          <Download size={12} /> Use
+                        </button>
+                      )}
                     </div>
                   )
                 })}
