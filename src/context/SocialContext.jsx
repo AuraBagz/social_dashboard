@@ -114,7 +114,47 @@ export function SocialProvider({ children }) {
   }, [])
 
   const connectPlatform = useCallback(async (platformId, tokens) => {
-    const data = await callEdgeFunction('social-connect', { platform: platformId, tokens })
+    let profileData = null
+
+    // For Twitter, verify client-side first (Twitter blocks datacenter IPs)
+    if (platformId === 'twitter') {
+      const twitterHeaders = {
+        'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+        'Cookie': `auth_token=${tokens.auth_token}; ct0=${tokens.ct0}`,
+        'X-Csrf-Token': tokens.ct0,
+        'X-Twitter-Active-User': 'yes',
+        'X-Twitter-Auth-Type': 'OAuth2Session',
+        'X-Twitter-Client-Language': 'en',
+      }
+
+      try {
+        const res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false', {
+          headers: twitterHeaders,
+          credentials: 'omit',
+        })
+        if (res.ok) {
+          const user = await res.json()
+          profileData = {
+            id: user.id_str,
+            name: user.name,
+            username: user.screen_name,
+            avatar: user.profile_image_url_https?.replace('_normal', '_400x400') || '',
+            bio: user.description || '',
+            followers: user.followers_count || 0,
+            following: user.friends_count || 0,
+            posts: user.statuses_count || 0,
+          }
+        }
+      } catch (e) {
+        console.warn('Client-side Twitter verification failed, falling back to server:', e)
+      }
+    }
+
+    const data = await callEdgeFunction('social-connect', {
+      platform: platformId,
+      tokens,
+      profileData,
+    })
     setConnections(prev => ({
       ...prev,
       [platformId]: {

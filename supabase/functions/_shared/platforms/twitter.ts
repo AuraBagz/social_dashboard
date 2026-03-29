@@ -15,92 +15,97 @@ function headers(tokens: Record<string, string>) {
 }
 
 export async function verifyCredentials(tokens: Record<string, string>) {
-  // Use the settings endpoint to get current user info
-  const res = await fetch(`${BASE}/1.1/account/settings.json`, {
-    headers: headers(tokens),
-  })
+  // Try multiple endpoints - Twitter changes these frequently
+  const endpoints = [
+    `${BASE}/1.1/account/verify_credentials.json?include_entities=false`,
+    `${BASE}/1.1/account/settings.json`,
+    `https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false`,
+    `https://api.twitter.com/1.1/account/settings.json`,
+  ]
 
-  if (!res.ok) {
-    // Try the GraphQL viewer endpoint as fallback
-    const variables = encodeURIComponent(JSON.stringify({ withCommunitiesMemberships: false }))
-    const features = encodeURIComponent(JSON.stringify({
-      hidden_profile_subscriptions_enabled: false,
-      rweb_tipjar_consumption_enabled: false,
-      responsive_web_graphql_exclude_directive_enabled: true,
-      verified_phone_label_enabled: false,
-      responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-      responsive_web_graphql_timeline_navigation_enabled: true,
-    }))
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, { headers: headers(tokens) })
+      if (!res.ok) continue
 
-    const gqlRes = await fetch(
-      `${BASE}/graphql/LimHGpmRAWbW-JTXwbIF3g/Viewer?variables=${variables}&features=${features}`,
-      { headers: headers(tokens) }
-    )
+      const data = await res.json()
 
-    if (!gqlRes.ok) throw new Error(`Twitter auth failed: ${gqlRes.status}`)
+      // verify_credentials returns full user object
+      if (data.screen_name && data.id_str) {
+        return {
+          id: data.id_str,
+          name: data.name,
+          username: data.screen_name,
+          avatar: data.profile_image_url_https?.replace('_normal', '_400x400') || '',
+          bio: data.description || '',
+          followers: data.followers_count || 0,
+          following: data.friends_count || 0,
+          posts: data.statuses_count || 0,
+        }
+      }
 
-    const gqlData = await gqlRes.json()
-    const user = gqlData?.data?.viewer?.user_results?.result?.legacy
-
-    if (!user) throw new Error('Twitter auth failed: could not get user data')
-
-    return {
-      id: gqlData.data.viewer.user_results.result.rest_id,
-      name: user.name,
-      username: user.screen_name,
-      avatar: user.profile_image_url_https?.replace('_normal', '_400x400'),
-      bio: user.description,
-      followers: user.followers_count,
-      following: user.friends_count,
-      posts: user.statuses_count,
+      // settings.json returns limited info
+      if (data.screen_name) {
+        return {
+          id: '',
+          name: data.screen_name,
+          username: data.screen_name,
+          avatar: '',
+          bio: '',
+          followers: 0,
+          following: 0,
+          posts: 0,
+        }
+      }
+    } catch (_) {
+      continue
     }
   }
 
-  const settings = await res.json()
+  // Last resort: try GraphQL Viewer query
+  const gqlEndpoints = [
+    'LimHGpmRAWbW-JTXwbIF3g',
+    'PfYIjPnDdLfAbXk7Eb7PUQ',
+  ]
 
-  // Get full user profile using screen_name from settings
-  const userRes = await fetch(
-    `${BASE}/graphql/xf3jd90KKBCUxdlI_tNHZw/UserByScreenName?variables=${encodeURIComponent(JSON.stringify({
-      screen_name: settings.screen_name,
-      withSafetyModeUserFields: true,
-    }))}&features=${encodeURIComponent(JSON.stringify({
-      hidden_profile_subscriptions_enabled: false,
-      rweb_tipjar_consumption_enabled: false,
-      responsive_web_graphql_exclude_directive_enabled: true,
-      verified_phone_label_enabled: false,
-      responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-      responsive_web_graphql_timeline_navigation_enabled: true,
-    }))}`,
-    { headers: headers(tokens) }
-  )
+  const variables = encodeURIComponent(JSON.stringify({ withCommunitiesMemberships: false }))
+  const features = encodeURIComponent(JSON.stringify({
+    hidden_profile_subscriptions_enabled: false,
+    rweb_tipjar_consumption_enabled: false,
+    responsive_web_graphql_exclude_directive_enabled: true,
+    verified_phone_label_enabled: false,
+    responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+    responsive_web_graphql_timeline_navigation_enabled: true,
+  }))
 
-  if (!userRes.ok) {
-    // Return basic info from settings if profile fetch fails
-    return {
-      id: '',
-      name: settings.screen_name,
-      username: settings.screen_name,
-      avatar: '',
-      bio: '',
-      followers: 0,
-      following: 0,
-      posts: 0,
+  for (const queryId of gqlEndpoints) {
+    try {
+      const res = await fetch(
+        `${BASE}/graphql/${queryId}/Viewer?variables=${variables}&features=${features}`,
+        { headers: headers(tokens) }
+      )
+      if (!res.ok) continue
+
+      const gqlData = await res.json()
+      const user = gqlData?.data?.viewer?.user_results?.result?.legacy
+      if (!user) continue
+
+      return {
+        id: gqlData.data.viewer.user_results.result.rest_id,
+        name: user.name,
+        username: user.screen_name,
+        avatar: user.profile_image_url_https?.replace('_normal', '_400x400') || '',
+        bio: user.description || '',
+        followers: user.followers_count || 0,
+        following: user.friends_count || 0,
+        posts: user.statuses_count || 0,
+      }
+    } catch (_) {
+      continue
     }
   }
 
-  const userData = await userRes.json()
-  const user = userData?.data?.user?.result?.legacy
-
-  return {
-    id: userData.data.user.result.rest_id || '',
-    name: user?.name || settings.screen_name,
-    username: user?.screen_name || settings.screen_name,
-    avatar: user?.profile_image_url_https?.replace('_normal', '_400x400') || '',
-    bio: user?.description || '',
-    followers: user?.followers_count || 0,
-    following: user?.friends_count || 0,
-    posts: user?.statuses_count || 0,
-  }
+  throw new Error('Twitter auth failed: could not verify credentials. Your cookies may be expired — try getting fresh ones from x.com')
 }
 
 export async function getTimeline(tokens: Record<string, string>, count = 20) {
