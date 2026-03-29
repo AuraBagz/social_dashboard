@@ -1,4 +1,3 @@
-import '@supabase/functions-js/edge-runtime.d.ts'
 import { handleCors, corsResponse, corsError } from '../_shared/cors.ts'
 import { saveTokens } from '../_shared/supabase.ts'
 import { getPlatform, getTokenConfig } from '../_shared/platforms/index.ts'

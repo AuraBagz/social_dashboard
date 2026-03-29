@@ -1,4 +1,3 @@
-import '@supabase/functions-js/edge-runtime.d.ts'
 import { handleCors, corsResponse, corsError } from '../_shared/cors.ts'
 import { removeConnection } from '../_shared/supabase.ts'
 
